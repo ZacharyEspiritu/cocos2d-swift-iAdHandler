@@ -4,7 +4,9 @@ A sample Swift class that you can easily import into your cocos2d-Swift project 
 
 ## Usage
 
-Import the file into your Source folder in your xCode project. Read the instructions below on how to implement the type of ad you want:
+Import the file into your Source folder in your xCode project. Also, go to your Project directory in xCode, open the Build Phases tab, and import the `iAd.framework` under "Link Binary With Libraries".
+
+Read the instructions below on how to implement the type of ad you want:
 
 #### Banner
 * Load a banner ad by using `iAdHandler.sharedInstance.loadAds(bannerPosition: BannerPosition)`. Possible `BannerPosition` types are `.Top` or `.Bottom`, which mean exactly what they say.
