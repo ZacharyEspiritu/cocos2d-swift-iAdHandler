@@ -36,12 +36,13 @@ class iAdHandler: NSObject {
     
     let view = CCDirector.sharedDirector().parentViewController!.view // Returns a UIView of the cocos2d parent view controller.
     
-    var adBannerView = ADBannerView(frame: CGRect.zeroRect)
+    var adBannerView = ADBannerView(frame: CGRect.zero)
     var bannerPosition: BannerPosition = .Top
     var isBannerDisplaying: Bool = false
     
     var interstitial = ADInterstitialAd()
     var interstitialAdView: UIView = UIView()
+    var interstitialIndexingNumber: Int = 0
     var isInterstitialDisplaying: Bool = false
     var isInterstitialLoaded: Bool = false
     
@@ -63,9 +64,9 @@ class iAdHandler: NSObject {
     /**
     Sets the position of the soon-to-be banner ad and attempts to load a new ad from the iAd network.
     
-    :param: bannerPosition  the `BannerPosition` at which the ad should be positioned initially
+    - parameter bannerPosition:  the `BannerPosition` at which the ad should be positioned initially
     */
-    func loadAds(#bannerPosition: BannerPosition) {
+    func loadAds(bannerPosition bannerPosition: BannerPosition) {
         self.bannerPosition = bannerPosition
         
         if bannerPosition == .Top {
@@ -82,18 +83,18 @@ class iAdHandler: NSObject {
     }
     
     /**
-    Repositions the `adBannerView` to the designated `bannerPosition`.
-    
-    :param: bannerPosition  the `BannerPosition` at which the ad should be positioned
-    */
-    func setBannerPosition(#bannerPosition: BannerPosition) {
+     Repositions the `adBannerView` to the designated `bannerPosition`.
+     
+     - parameter bannerPosition:  the `BannerPosition` at which the ad should be positioned
+     */
+    func setBannerPosition(bannerPosition bannerPosition: BannerPosition) {
         self.bannerPosition = bannerPosition
     }
     /**
-    Displays the `adBannerView` with a short animation for polish.
-    
-    If a banner ad has not been successfully loaded, nothing will happen.
-    */
+     Displays the `adBannerView` with a short animation for polish.
+     
+     If a banner ad has not been successfully loaded, nothing will happen.
+     */
     func displayBannerAd() {
         if adBannerView.bannerLoaded {
             adBannerView.hidden = false
@@ -108,15 +109,15 @@ class iAdHandler: NSObject {
             })
         }
         else {
-            println("Did not display ads because banner isn't loaded yet!")
+            print("Did not display ads because banner isn't loaded yet!")
         }
     }
     
     /**
-    Hides the `adBannerView` with a short animation for polish.
-    
-    If a banner ad has not been successfully loaded, nothing will happen.
-    */
+     Hides the `adBannerView` with a short animation for polish.
+     
+     If a banner ad has not been successfully loaded, nothing will happen.
+     */
     func hideBannerAd() {
         if adBannerView.bannerLoaded {
             UIView.animateWithDuration(0.5, animations: {() -> Void in
@@ -145,13 +146,13 @@ class iAdHandler: NSObject {
     }
     
     /**
-    Displays the `interstitial`.
-    
-    If an interstitial has not been successfully loaded, nothing will happen.
-    */
+     Displays the `interstitial`.
+     
+     If an interstitial has not been successfully loaded, nothing will happen.
+     */
     func displayInterstitialAd() {
         
-        if isInterstitialLoaded == true {
+        if interstitial.loaded {
             
             view.addSubview(interstitialAdView)
             interstitial.presentInView(interstitialAdView)
@@ -171,12 +172,32 @@ class iAdHandler: NSObject {
                 self.closeButton.hidden = false
             })
             
-            println("Interstitial displaying!")
+            print("Interstitial displaying!")
         }
         else {
-            println("Interstitial not loaded yet!")
+            print("Interstitial not loaded yet!")
         }
         
+    }
+    
+    /**
+     Checks to see if an interstitial should be displayed in this round based on the `interstitialIndexingNumber`.
+     */
+    func checkIfInterstitialAdShouldBeDisplayed() {
+        if interstitial.loaded {
+            switch interstitialIndexingNumber % 3 {
+            case 0:
+                print("Interstitial should be displayed now!")
+                displayInterstitialAd()
+            default:
+                print("Interstitial should not be displayed yet!")
+                break
+            }
+            interstitialIndexingNumber++
+        }
+        else {
+            print("Interstitial isn't loaded yet!")
+        }
     }
     
     
@@ -191,6 +212,7 @@ class iAdHandler: NSObject {
                 self.closeButton.removeFromSuperview()
                 self.isInterstitialDisplaying = false
                 self.interstitial = ADInterstitialAd()
+                self.interstitial.delegate = self
             }
         }
     }
@@ -200,7 +222,7 @@ class iAdHandler: NSObject {
     /**
     When called, delays the running of code included in the `closure` parameter.
     
-    :param: delay  how long, in milliseconds, to wait until the program should run the code in the closure statement
+    - parameter delay:  how long, in milliseconds, to wait until the program should run the code in the closure statement
     */
     func delay(delay:Double, closure:()->()) {
         dispatch_after(
@@ -215,19 +237,19 @@ class iAdHandler: NSObject {
 extension iAdHandler: ADInterstitialAdDelegate {
     
     /**
-    Called whenever a interstitial successfully loads.
-    */
+     Called whenever a interstitial successfully loads.
+     */
     func interstitialAdDidLoad(interstitialAd: ADInterstitialAd!) {
         interstitialAdView = UIView()
         interstitialAdView.frame = self.view.bounds
         isInterstitialLoaded = true
         
-        println("Succesfully loaded interstitital!")
+        print("Succesfully loaded interstitital!")
     }
     
     /**
-    Called whenever the interstitial's action finishes; e.g.: the user has already clicked on the ad and decides to exit out or the ad campaign finishes.
-    */
+     Called whenever the interstitial's action finishes; e.g.: the user has already clicked on the ad and decides to exit out or the ad campaign finishes.
+     */
     func interstitialAdActionDidFinish(interstitialAd: ADInterstitialAd!) {
         UIView.animateWithDuration(0.5, animations: {() -> Void in
             self.interstitialAdView.center = CGPoint(x: self.interstitialAdView.center.x, y: (self.view.bounds.size.height * 1.5))
@@ -239,19 +261,20 @@ extension iAdHandler: ADInterstitialAdDelegate {
             self.isInterstitialDisplaying = false
             self.isInterstitialLoaded = false
             self.interstitial = ADInterstitialAd()
+            self.interstitial.delegate = self
         }
     }
     
     /**
-    Called whenever an interstitial ad is about to be displayed.
-    */
+     Called whenever an interstitial ad is about to be displayed.
+     */
     func interstitialAdActionShouldBegin(interstitialAd: ADInterstitialAd!, willLeaveApplication willLeave: Bool) -> Bool {
         return true
     }
     
     /**
-    Called whenever an interstitial ad unloads automatically.
-    */
+     Called whenever an interstitial ad unloads automatically.
+     */
     func interstitialAdDidUnload(interstitialAd: ADInterstitialAd!) {
         if isInterstitialDisplaying {
             interstitialAdView.removeFromSuperview()
@@ -260,32 +283,36 @@ extension iAdHandler: ADInterstitialAdDelegate {
         }
         isInterstitialLoaded = false
         interstitial = ADInterstitialAd()
+        interstitial.delegate = self
+        
+        print("Interstitial unloaded")
     }
     
     /**
-    Called when a interstitial was unable to be loaded.
-    */
+     Called when a interstitial was unable to be loaded.
+     */
     func interstitialAd(interstitialAd: ADInterstitialAd!, didFailWithError error: NSError!) {
-        println("Was not able to load an interstitial with error: \(error)")
-        self.isInterstitialLoaded = false
-        interstitial = ADInterstitialAd()
+        print("Was not able to load an interstitial with error: \(error)")
+        if !isInterstitialLoaded {
+            interstitial = ADInterstitialAd()
+            interstitial.delegate = self
+        }
     }
-    
 }
 
 extension iAdHandler: ADBannerViewDelegate {
     
     /**
-    Called whenever a banner ad successfully loads.
-    */
+     Called whenever a banner ad successfully loads.
+     */
     func bannerViewDidLoadAd(banner: ADBannerView!) {
-        println("Successfully loaded banner!")
+        print("Successfully loaded banner!")
     }
     
     /**
-    Called when a banner ad was unable to be loaded.
-    */
+     Called when a banner ad was unable to be loaded.
+     */
     func bannerView(banner: ADBannerView!, didFailToReceiveAdWithError error: NSError!) {
-        println("Was not able to load a banner with error: \(error)")
+        print("Was not able to load a banner with error: \(error)")
     }
 }
